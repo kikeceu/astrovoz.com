@@ -1,0 +1,17 @@
+{
+  "name": "astrovoz",
+  "version": "1.0.0",
+  "description": "App de horóscopo personalizado con voz",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "axios": "^1.10.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "jsonrepair": "^3.13.0",
+    "multer": "^1.4.4",
+    "sqlite3": "^5.1.7"
+  }
+}

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AstroVoz - Horóscopo por Voz</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: radial-gradient(ellipse at center, #1c1b2f 0%, #0f0e1b 100%);
+      color: white;
+      text-align: center;
+      padding: 2rem;
+    }
+    h1 {
+      color: #ff8a00;
+    }
+    button {
+      background-color: #ff8a00;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 30px;
+      color: white;
+      cursor: pointer;
+      margin: 1rem;
+    }
+    .result {
+      background-color: #292841;
+      margin-top: 2rem;
+      padding: 2rem;
+      border-radius: 12px;
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    #message {
+      font-family: 'Playfair Display', serif;
+      background: linear-gradient(135deg, #2d1d47, #1e1a30);
+      border: 1px solid #5e3b94;
+      border-radius: 12px;
+      padding: 1.5rem;
+      color: #eee;
+      line-height: 1.6;
+      font-size: 1.05rem;
+      box-shadow: 0 0 12px rgba(255, 138, 0, 0.2);
+      max-width: 800px;
+      margin: 2rem auto;
+    }
+    #message b {
+      color: #ffcc70;
+    }
+
+    #message span.section {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+      color: #ffcc70;
+      font-size: 1.1rem;
+    }
+    #message {
+      animation: fadeIn 1.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <h1>🔮 AstroVoz</h1>
+  <p>Grabá tu voz para recibir un horóscopo personalizado</p>
+<div style="margin: 2rem auto; max-width: 500px; background: #2e2d47; padding: 1rem 2rem; border-radius: 12px; text-align: left;">
+  <h3 style="color:#ff8a00;">🗣️ ¿Qué decir en tu mensaje de voz?</h3>
+  <p>Grabá un audio breve (menos de 30 segundos) incluyendo lo siguiente:</p>
+  <ul style="padding-left: 1.2rem;">
+    <li><strong>Tu nombre completo</strong></li>
+    <li><strong>Tu fecha de nacimiento</strong></li>
+    <li><strong>Lugar de nacimiento</strong></li>
+    <li><strong>Estado civil</strong></li>
+    <li><strong>Y qué te gustaría saber</strong></li>
+  </ul>
+
+  <p style="margin-top: 1.5rem;"><strong>🎧 Ejemplo de mensaje ideal:</strong></p>
+  <blockquote style="font-style: italic; color: #ccc; border-left: 4px solid #ff8a00; padding-left: 1rem;">
+    Hola, soy Enrique Vega. Nací el 4 de mayo de 1986 en Mendoza, Argentina. Estoy casado y me gustaría saber cómo me va a ir esta semana en lo laboral y en el amor.
+  </blockquote>
+
+  <p style="margin-top: 1.5rem;">🎯 Hablá como si le contaras a una amiga astróloga. Tranquilo, claro y natural.</p>
+</div>
+
+
+  <button id="startButton">🎙️ Empezar</button>
+  <button id="stopButton" disabled>⏹️ Detener</button>
+
+  <div class="result" id="output" style="display:none">
+    <h2>✨ Tu horóscopo</h2>
+    <p id="message">Procesando...</p>
+    <div id="cntContact" style="display:none">
+      <a
+        id="whatsappShare"
+        target="_blank"
+        style="display: inline-block; margin-top: 1rem; background: #25d366; color: white; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none;"
+      >
+         Compartir por WhatsApp
+      </a>
+      <div id="contact-form" style="margin-top: 2rem; text-align: center;">
+        <h4 style="color: #ff8a00;">¿Querés que te enviemos este horóscopo por WhatsApp o Email?</h4>
+        <p style="color: #ccc;">Dejanos tus datos para que te lo enviemos:</p>
+        <input type="text" id="whatsapp" placeholder="Tu número de WhatsApp" style="padding: 0.5rem; width: 80%; max-width: 300px;"><br><br>
+        <input type="email" id="email" placeholder="Tu email" style="padding: 0.5rem; width: 80%; max-width: 300px;"><br><br>
+        <button id="contact-form button" onclick="enviarContacto()" style="padding: 0.6rem 1.2rem; background: #ff8a00; border: none; color: white; border-radius: 6px;">Enviar</button>        
+      </div>
+      <p id="contactMessage" style="margin-top: 1rem; color: #8aff8a;"></p>
+    </div>
+  </div>
+
+  <script>
+    let mediaRecorder;
+    let audioChunks = [];
+
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const output = document.getElementById('output');
+    const message = document.getElementById('message');
+
+    startButton.onclick = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) audioChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm; codecs=opus' });
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'audio.webm');
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+        let mensajeHTML = data.mensaje
+        .replace(/\*\*(.*?)\*\*:/g, '<div class="section">$1</div>')
+        .replace(/\n/g, "<br>");
+
+        message.innerHTML = mensajeHTML;
+
+        /*message.innerHTML = data.mensaje
+          ? data.mensaje.replace(/\n/g, "<br>")
+          : '⚠️ No se pudo generar el horóscopo.';*/
+
+        if (data.horoscopo_id) {
+          const whatsappLink = document.getElementById('whatsappShare');
+          const textoParaCompartir = encodeURIComponent(generarTextoParaWhatsapp(mensajeHTML) || 'Mirá mi horóscopo personalizado en Astrovoz.com ✨');
+          whatsappLink.href = `https://wa.me/?text=${textoParaCompartir}`;
+          whatsappLink.style.display = 'inline-block';
+          document.getElementById('cntContact').style.display = 'block';
+          document.getElementById('contact-form').dataset.horoscopoId = data.horoscopo_id;
+        }
+
+      };
+
+      mediaRecorder.start();
+      startButton.disabled = true;
+      stopButton.disabled = false;
+      message.textContent = "🎙️ Grabando...";
+      output.style.display = "block";
+    };
+
+    stopButton.onclick = () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        startButton.disabled = false;
+        stopButton.disabled = true;
+        message.textContent = "⏳ Procesando...";
+      }
+    };
+
+    async function enviarContacto() {
+      const whatsapp = document.getElementById('whatsapp').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const horoscopoId = document.getElementById('contact-form').dataset.horoscopoId;
+
+      if (!horoscopoId) {
+        document.getElementById('contactMessage').textContent = '⚠️ No se ha generado el horóscopo aún.';
+        return;
+      }
+
+      const res = await fetch('/api/guardar-contacto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ horoscopo_id: horoscopoId, whatsapp, email })
+      });
+
+      const data = await res.json();
+      document.getElementById('contactMessage').textContent = data.mensaje;
+
+      // Opcional: deshabilitar el botón o campos luego del envío exitoso
+      if (res.ok) {
+        //document.querySelector('#contact-form button').disabled = true;
+        document.getElementById('contact-form').style.display = 'none';
+
+      }
+    }
+
+    function generarTextoParaWhatsapp(html) {
+      // Elimina las etiquetas y reemplaza los bloques
+      return html
+        .replace(/<span class="section">(.*?)<\/span>/g, '✨ *$1*')  // títulos con emoji y negrita
+        .replace(/<br\s*\/?>/gi, '\n')                              // saltos de línea
+        .replace(/<\/?[^>]+(>|$)/g, '')                             // quita cualquier otra etiqueta HTML
+        .trim();
+    }
+
+  </script>
+</body>
+</html>
