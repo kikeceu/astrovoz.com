@@ -11,4 +11,7 @@ app.listen(PORT, () => {
 const apiRoutes = require('./routes/api');
 app.use('/api', apiRoutes);
 
+const adminRoutes = require('./routes/admin');
+app.use('/admin', adminRoutes);
+
 require('./src/db/sqlite');
