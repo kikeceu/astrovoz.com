@@ -69,8 +69,12 @@ router.post('/upload', upload.single('audio'), async (req, res) => {
 
     // 🛟 Crear copia permanente
     const copiaPath = path.join(__dirname, '../audios/', path.basename(audioPath));
-    fs.copyFileSync(audioPath, copiaPath);
-    console.log('✅ Copia de seguridad creada en:', copiaPath);
+    try {
+      fs.copyFileSync(audioPath, copiaPath);
+      console.log('✅ Copia creada en:', copiaPath);
+    } catch (err) {
+      console.error('❌ Error al copiar el archivo:', err.message);
+    }
 
     /*const renamedPath = `${audioPath}.webm`;
 
