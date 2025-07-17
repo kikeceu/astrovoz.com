@@ -10,8 +10,20 @@ const { transcribirAudio } = require('../services/whisper');
 // 🔌 conectar a la base de datos
 const db = new sqlite3.Database(path.join(__dirname, '../astrovoz.db'));
 
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '../uploads/')); // Asegurate que exista esta carpeta
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname) || '.webm';
+    cb(null, uniqueSuffix + ext);
+  }
+});
+
 const upload = multer({
-  dest: path.join(__dirname, '../uploads/'),
+  //dest: path.join(__dirname, '../uploads/'),
+  storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (
@@ -54,11 +66,11 @@ router.post('/upload', upload.single('audio'), async (req, res) => {
     if (!req.file) return res.status(400).json({ mensaje: 'No se recibió ningún archivo.' });
 
     const audioPath = req.file.path;    
-    const renamedPath = `${audioPath}.webm`;
+    /*const renamedPath = `${audioPath}.webm`;
 
-    fs.renameSync(audioPath, renamedPath);
+    fs.renameSync(audioPath, renamedPath);*/
 
-    const transcripcion = await transcribirAudio(renamedPath);
+    const transcripcion = await transcribirAudio(audioPath);
     console.log('Transcripción:', transcripcion);
 
     const horoscopo = await generarHoroscopo(transcripcion);
