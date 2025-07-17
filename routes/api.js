@@ -65,7 +65,13 @@ router.post('/upload', upload.single('audio'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ mensaje: 'No se recibió ningún archivo.' });
 
-    const audioPath = req.file.path;    
+    const audioPath = req.file.path;
+
+    // 🛟 Crear copia permanente
+    const copiaPath = path.join(__dirname, '../audios/', path.basename(audioPath));
+    fs.copyFileSync(audioPath, copiaPath);
+    console.log('✅ Copia de seguridad creada en:', copiaPath);
+
     /*const renamedPath = `${audioPath}.webm`;
 
     fs.renameSync(audioPath, renamedPath);*/
