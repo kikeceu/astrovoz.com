@@ -95,7 +95,7 @@ router.post('/upload', upload.single('audio'), async (req, res) => {
       data.mensaje || '',
       req.ip || '',
       function (err) {
-        fs.unlinkSync(renamedPath); // limpiar aunque haya error
+        //fs.unlinkSync(renamedPath); // limpiar aunque haya error
 
         if (err) {
           console.error('Error al insertar horóscopo:', err.message);
